@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Refrigerant Pressure Estimator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --accent2: #22d3ee;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #334155;
+      --success: #34d399;
+      --warn: #fbbf24;
+      --orange: #f97316;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      min-height: 100vh;
+      color: var(--text);
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    .container { max-width: 540px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 1.5rem; }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    header p { color: var(--muted); font-size: 0.88rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.35rem 1.4rem;
+      margin-bottom: 1.15rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 1.05rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .deltas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .deltas input { font-size: 0.95rem; }
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+      color: #0f172a;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-top: 0.4rem;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(14,165,233,0.4);
+    }
+    .results { display: none; }
+    .results.visible { display: block; }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    .result-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.95rem 0.8rem;
+      text-align: center;
+    }
+    .result-box .side {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .result-box .value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+    .result-box.high .value { color: var(--orange); }
+    .result-box .unit {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .sat-temps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-top: 0.9rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .sat-temps span { color: var(--text); font-weight: 600; }
+    .note {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 0.7rem 0.85rem;
+      border-left: 3px solid var(--warn);
+    }
+    footer {
+      text-align: center;
+      margin-top: 1.3rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    @media (max-width: 440px) {
+      .row, .result-grid, .deltas, .sat-temps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Refrigerant Pressure Estimator</h1>
+      <p>Estimate vapor &amp; liquid pressures from indoor / outdoor air temperatures</p>
+    </header>
+
+    <div class="card">
+      <div class="field">
+        <label for="refrigerant">Refrigerant</label>
+        <select id="refrigerant">
+          <option value="R22">R-22</option>
+          <option value="R407C">R-407C</option>
+          <option value="R410A" selected>R-410A</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="indoor">Indoor Air Temp (°F)</label>
+          <input type="number" id="indoor" value="75" step="0.5" min="50" max="95" />
+          <div class="hint">Room / return-air temperature</div>
+        </div>
+        <div class="field">
+          <label for="outdoor">Outdoor Air Temp (°F)</label>
+          <input type="number" id="outdoor" value="95" step="0.5" min="50" max="125" />
+          <div class="hint">Ambient outdoor temperature</div>
+        </div>
+      </div>
+
+      <div class="deltas">
+        <div class="field">
+          <label for="evapTD">Evaporator TD (°F)</label>
+          <input type="number" id="evapTD" value="25" step="1" min="10" max="40" />
+          <div class="hint">Indoor − sat. temp (typical 20–30)</div>
+        </div>
+        <div class="field">
+          <label for="condTD">Condenser TD (°F)</label>
+          <input type="number" id="condTD" value="20" step="1" min="10" max="40" />
+          <div class="hint">Sat. temp − outdoor (typical 15–30)</div>
+        </div>
+      </div>
+
+      <div class="hint" style="margin-top:0.6rem; margin-bottom:0.2rem;">
+        Base indoor humidity assumed 50 % RH (not used in pressure calculation)
+      </div>
+
+      <button id="calcBtn">Calculate Pressures</button>
+    </div>
+
+    <div class="card results" id="results">
+      <div class="result-grid">
+        <div class="result-box">
+          <div class="side">Low Side · Vapor / Suction</div>
+          <div class="value" id="vaporP">—</div>
+          <div class="unit">PSIG</div>
+        </div>
+        <div class="result-box high">
+          <div class="side">High Side · Liquid / Discharge</div>
+          <div class="value" id="liquidP">—</div>
+          <div class="unit">PSIG</div>
+        </div>
+      </div>
+
+      <div class="sat-temps">
+        <div>Assumed evaporator sat. <span id="evapSat">—</span> °F</div>
+        <div>Assumed condenser sat. <span id="condSat">—</span> °F</div>
+      </div>
+
+      <div class="note" id="note">
+        Low-side pressure corresponds to evaporator saturation temperature
+        (Indoor air − Evaporator TD). High-side pressure corresponds to condenser
+        saturation temperature (Outdoor air + Condenser TD). Real readings vary
+        with superheat, subcooling, airflow, load and elevation.
+      </div>
+    </div>
+
+    <footer>
+      Approximate PT-chart data · For estimation / training only — not a diagnostic tool
+    </footer>
+  </div>
+
+  <script>
+    // Saturation pressure tables (PSIG) vs Temperature (°F)
+    // Approximated from standard HVAC PT charts
+    const PT = {
+      R22: [
+        [-40, 0.6], [-35, 2.6], [-30, 4.9], [-25, 7.5], [-20, 10.2],
+        [-15, 13.2], [-10, 16.5], [-5, 20.1], [0, 24.0], [5, 28.3],
+        [10, 32.8], [15, 37.8], [20, 43.1], [25, 48.8], [30, 54.9],
+        [35, 61.5], [40, 68.6], [45, 76.1], [50, 84.1], [55, 92.6],
+        [60, 101.6], [65, 111.3], [70, 121.5], [75, 132.2], [80, 143.7],
+        [85, 155.7], [90, 168.4], [95, 181.9], [100, 196.0], [105, 210.8],
+        [110, 226.4], [115, 242.8], [120, 260.0], [125, 278.1], [130, 297.0],
+        [135, 316.7], [140, 337.4], [145, 359.1], [150, 381.7]
+      ],
+      R407C: [
+        [-40, 4.6], [-35, 7.0], [-30, 9.8], [-25, 13.0], [-20, 16.5],
+        [-15, 20.5], [-10, 24.9], [-5, 29.8], [0, 35.1], [5, 40.9],
+        [10, 47.2], [15, 54.0], [20, 61.3], [25, 69.2], [30, 77.7],
+        [35, 86.8], [40, 96.5], [45, 107.0], [50, 118.0], [55, 129.8],
+        [60, 142.3], [65, 155.6], [70, 169.7], [75, 184.6], [80, 200.4],
+        [85, 217.1], [90, 234.8], [95, 253.4], [100, 273.1], [105, 293.8],
+        [110, 315.6], [115, 338.5], [120, 362.6], [125, 387.9], [130, 414.5],
+        [135, 442.4], [140, 471.6], [145, 502.2], [150, 534.2]
+      ],
+      R410A: [
+        [-40, 10.8], [-35, 13.5], [-30, 16.5], [-25, 19.9], [-20, 23.7],
+        [-15, 27.9], [-10, 32.6], [-5, 37.8], [0, 43.5], [5, 49.8],
+        [10, 56.6], [15, 64.0], [20, 72.0], [25, 80.7], [30, 90.0],
+        [35, 100.0], [40, 110.8], [45, 122.3], [50, 134.7], [55, 147.9],
+        [60, 162.0], [65, 177.0], [70, 193.0], [75, 210.0], [80, 228.0],
+        [85, 247.1], [90, 267.3], [95, 288.7], [100, 311.3], [105, 335.2],
+        [110, 360.4], [115, 387.0], [120, 415.0], [125, 444.5], [130, 475.5],
+        [135, 508.1], [140, 542.5], [145, 578.6], [150, 616.5]
+      ]
+    };
+
+    function interpolate(table, temp) {
+      if (temp <= table[0][0]) return table[0][1];
+      if (temp >= table[table.length - 1][0]) return table[table.length - 1][1];
+      for (let i = 0; i < table.length - 1; i++) {
+        const [t1, p1] = table[i];
+        const [t2, p2] = table[i + 1];
+        if (temp >= t1 && temp <= t2) {
+          const ratio = (temp - t1) / (t2 - t1);
+          return p1 + ratio * (p2 - p1);
+        }
+      }
+      return null;
+    }
+
+    function formatPressure(p) {
+      if (p === null || isNaN(p)) return '—';
+      if (p < 0) return (Math.abs(p)).toFixed(1) + '" Hg';
+      return p.toFixed(1);
+    }
+
+    function calculate() {
+      const ref = document.getElementById('refrigerant').value;
+      const indoor = parseFloat(document.getElementById('indoor').value);
+      const outdoor = parseFloat(document.getElementById('outdoor').value);
+      const evapTD = parseFloat(document.getElementById('evapTD').value);
+      const condTD = parseFloat(document.getElementById('condTD').value);
+
+      if ([indoor, outdoor, evapTD, condTD].some(v => isNaN(v))) {
+        alert('Please enter valid numbers.');
+        return;
+      }
+
+      // Saturation temperatures using typical approach / TD
+      const evapSat = indoor - evapTD;   // e.g. 75 - 25 = 50 °F
+      const condSat = outdoor + condTD;  // e.g. 95 + 20 = 115 °F
+
+      const table = PT[ref];
+      const vapor = interpolate(table, evapSat);
+      const liquid = interpolate(table, condSat);
+
+      document.getElementById('vaporP').textContent = formatPressure(vapor);
+      document.getElementById('liquidP').textContent = formatPressure(liquid);
+      document.getElementById('evapSat').textContent = evapSat.toFixed(1);
+      document.getElementById('condSat').textContent = condSat.toFixed(1);
+      document.getElementById('results').classList.add('visible');
+
+      const noteEl = document.getElementById('note');
+      if (ref === 'R407C') {
+        noteEl.innerHTML = `
+          <strong>R-407C:</strong> Blend with ~8–10 °F glide. Values are approximate mid-glide pressures.
+          Low side uses evaporator sat = Indoor − Evaporator TD.
+          High side uses condenser sat = Outdoor + Condenser TD.
+          Actual pressures also depend on superheat, subcooling, airflow and load.
+        `;
+      } else {
+        noteEl.innerHTML = `
+          Low-side pressure = saturation pressure at evaporator temp (Indoor air − Evaporator TD).
+          High-side pressure = saturation pressure at condenser temp (Outdoor air + Condenser TD).
+          Real system pressures vary with superheat, subcooling, airflow, load and elevation.
+        `;
+      }
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    ['indoor', 'outdoor', 'refrigerant', 'evapTD', 'condTD'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculate);
+      document.getElementById(id).addEventListener('change', calculate);
+    });
+    calculate();
+  </script>
+</body>
+</html>
