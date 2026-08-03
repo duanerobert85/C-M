@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refrigeration System Calculator</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #f97316;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --input-bg: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .header {
+      background: linear-gradient(135deg, #0c4a6e, #1e3a5f);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .header h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .header .badge {
+      background: #0ea5e9;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 70px);
+    }
+    .left {
+      flex: 2;
+      padding: 1.25rem;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+    }
+    .right {
+      flex: 1;
+      padding: 1.25rem;
+      background: #0b1220;
+      min-width: 320px;
+    }
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1rem;
+    }
+    .section h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section h2 .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .section.cond h2 { color: var(--accent2); }
+    .section.cond h2 .dot { background: var(--accent2); }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 700px) {
+      .container { flex-direction: column; }
+      .left { border-right: none; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    input[type="number"], select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.55rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.15s;
+      appearance: none;
+    }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 2rem;
+    }
+    input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .unit {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .diagram {
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .diagram svg {
+      max-width: 100%;
+      height: auto;
+    }
+    .results-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 0.65rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    td.value {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      font-size: 1rem;
+    }
+    .val-ok { color: var(--success); }
+    .val-warn { color: #eab308; }
+    .val-high { color: var(--danger); }
+    .note {
+      margin-top: 1.25rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.45;
+      background: #1e293b;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+    }
+    .note strong { color: var(--text); }
+    .sat-row td { color: var(--muted); font-size: 0.85rem; }
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #1e40af;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { background: #1d4ed8; }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .formula {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 0.15rem;
+    }
+    .ref-select-wrap {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Refrigeration System Calculator</h1>
+    <span class="badge" id="refBadge">R-454B</span>
+  </div>
+
+  <div class="container">
+    <!-- LEFT: Inputs + Diagram -->
+    <div class="left">
+      <div class="diagram">
+        <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" aria-label="System schematic">
+          <!-- Condenser coil (left, hot) -->
+          <rect x="20" y="40" width="140" height="100" rx="6" fill="#3f1f1f" stroke="#f97316" stroke-width="2"/>
+          <text x="90" y="30" text-anchor="middle" fill="#f97316" font-size="12" font-weight="600">CONDENSER</text>
+          <text x="90" y="70" text-anchor="middle" fill="#fdba74" font-size="10">Air In →</text>
+          <text x="90" y="110" text-anchor="middle" fill="#fdba74" font-size="10">← Air Out</text>
+          <!-- Fan left -->
+          <circle cx="40" cy="90" r="14" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+          <path d="M40 78 L40 102 M28 90 L52 90" stroke="#94a3b8" stroke-width="1.5"/>
+          
+          <!-- Lines to compressor -->
+          <path d="M160 70 H220" stroke="#f97316" stroke-width="3" fill="none"/>
+          <path d="M160 110 H220" stroke="#38bdf8" stroke-width="3" fill="none"/>
+          
+          <!-- Compressor -->
+          <rect x="220" y="55" width="70" height="70" rx="8" fill="#1e3a5f" stroke="#38bdf8" stroke-width="2"/>
+          <text x="255" y="95" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600">COMP</text>
+          
+          <!-- Lines to evaporator -->
+          <path d="M290 70 H350" stroke="#f97316" stroke-width="3" fill="none"/>
+          <path d="M290 110 H350" stroke="#38bdf8" stroke-width="3" fill="none"/>
+          
+          <!-- Evaporator coil (right, cold) -->
+          <rect x="350" y="40" width="140" height="100" rx="6" fill="#0c2a3a" stroke="#38bdf8" stroke-width="2"/>
+          <text x="420" y="30" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600">EVAPORATOR</text>
+          <text x="420" y="70" text-anchor="middle" fill="#7dd3fc" font-size="10">Air In →</text>
+          <text x="420" y="110" text-anchor="middle" fill="#7dd3fc" font-size="10">← Air Out</text>
+          <!-- Fan right -->
+          <circle cx="470" cy="90" r="14" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+          <path d="M470 78 L470 102 M458 90 L482 90" stroke="#94a3b8" stroke-width="1.5"/>
+          
+          <!-- Labels -->
+          <text x="255" y="145" text-anchor="middle" fill="#94a3b8" font-size="10">Suction / Discharge</text>
+          <text x="90" y="160" text-anchor="middle" fill="#f97316" font-size="10">Hot gas / Liquid</text>
+          <text x="420" y="160" text-anchor="middle" fill="#38bdf8" font-size="10">Cold vapor / Liquid</text>
+          
+          <!-- Refrigerant badge -->
+          <rect x="530" y="70" width="90" height="40" rx="6" fill="#1e293b" stroke="#64748b"/>
+          <text x="575" y="95" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700" id="svgRefLabel">R-454B</text>
+        </svg>
+        <p style="font-size:0.75rem;color:#64748b;margin-top:0.5rem;">Simplified schematic inspired by the reference diagram (air-cooled system)</p>
+      </div>
+
+      <!-- Refrigerant Selection -->
+      <div class="section">
+        <h2><span class="dot"></span> Refrigerant Type</h2>
+        <div class="ref-select-wrap">
+          <label for="refrigerant">Select Refrigerant</label>
+          <select id="refrigerant" onchange="onRefrigerantChange()">
+            <option value="R454B" selected>R-454B (Solstice)</option>
+            <option value="R410A">R-410A</option>
+            <option value="R32">R-32</option>
+            <option value="R22">R-22</option>
+            <option value="R407C">R-407C</option>
+          </select>
+        </div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem;" id="glideNote">
+          R-454B has temperature glide → Superheat uses Dew point, Subcooling uses Bubble point.
+        </p>
+      </div>
+
+      <!-- Evaporator Air -->
+      <div class="section">
+        <h2><span class="dot"></span> Evaporator Coil — Air Side</h2>
+        <div class="grid">
+          <div class="input-wrap">
+            <label for="evapIn">Air Inlet Temperature</label>
+            <input type="number" id="evapIn" step="0.1" value="75" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+          <div class="input-wrap">
+            <label for="evapOut">Air Outlet Temperature</label>
+            <input type="number" id="evapOut" step="0.1" value="55" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Condenser Air -->
+      <div class="section cond">
+        <h2><span class="dot"></span> Condenser Coil — Air Side</h2>
+        <div class="grid">
+          <div class="input-wrap">
+            <label for="condIn">Air Inlet Temperature (Ambient)</label>
+            <input type="number" id="condIn" step="0.1" value="95" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+          <div class="input-wrap">
+            <label for="condOut">Air Outlet Temperature</label>
+            <input type="number" id="condOut" step="0.1" value="115" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refrigerant Pressures & Temps -->
+      <div class="section">
+        <h2><span class="dot"></span> Pressures &amp; Line Temperatures</h2>
+        <div class="grid">
+          <div class="input-wrap">
+            <label for="sucP">Suction Pressure</label>
+            <input type="number" id="sucP" step="0.1" value="93" oninput="calculate()">
+            <span class="unit">psig</span>
+          </div>
+          <div class="input-wrap">
+            <label for="sucT">Suction Line Temperature</label>
+            <input type="number" id="sucT" step="0.1" value="50" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+          <div class="input-wrap">
+            <label for="disP">Discharge Pressure</label>
+            <input type="number" id="disP" step="0.1" value="320" oninput="calculate()">
+            <span class="unit">psig</span>
+          </div>
+          <div class="input-wrap">
+            <label for="liqT">Liquid Line Temperature</label>
+            <input type="number" id="liqT" step="0.1" value="100" oninput="calculate()">
+            <span class="unit">°F</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="button" onclick="loadExample()">Load Example</button>
+          <button type="button" class="secondary" onclick="resetDefaults()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="right">
+      <div class="results-title">Calculated Results</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th style="text-align:right">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Evaporator ΔT<br><span class="formula">Air In − Air Out</span></td>
+            <td class="value" id="evapDT">—</td>
+          </tr>
+          <tr>
+            <td>Condenser ΔT<br><span class="formula">Air Out − Air In</span></td>
+            <td class="value" id="condDT">—</td>
+          </tr>
+          <tr>
+            <td>Evaporator Approach (TD)<br><span class="formula">Air In − Sat. Evap</span></td>
+            <td class="value" id="evapApproach">—</td>
+          </tr>
+          <tr>
+            <td>Condenser Approach<br><span class="formula">Liquid Line − Air In</span></td>
+            <td class="value" id="condApproach">—</td>
+          </tr>
+          <tr>
+            <td>Superheat<br><span class="formula" id="shFormula">Suction Line − Sat. Evap (Dew)</span></td>
+            <td class="value" id="superheat">—</td>
+          </tr>
+          <tr>
+            <td>Subcooling<br><span class="formula" id="scFormula">Sat. Cond (Bubble) − Liquid Line</span></td>
+            <td class="value" id="subcool">—</td>
+          </tr>
+          <tr class="sat-row">
+            <td id="satEvapLabel">Sat. Evaporating Temp (Dew)</td>
+            <td class="value" id="satEvap">—</td>
+          </tr>
+          <tr class="sat-row">
+            <td id="satCondLabel">Sat. Condensing Temp (Bubble)</td>
+            <td class="value" id="satCond">—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note" id="notesBox">
+        <strong>Notes:</strong><br>
+        • Superheat uses <strong>dew-point</strong> (saturated vapor) for glide refrigerants.<br>
+        • Subcooling uses <strong>bubble-point</strong> (saturated liquid) for glide refrigerants.<br>
+        • Condenser Approach (air-cooled) = liquid line temp − entering condenser air.<br>
+        • PT data sourced from manufacturer charts (Honeywell, Hudson, etc.).
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // PT DATA: [pressure_psig, bubble_or_sat °F, dew_or_sat °F]
+    // For near-azeotropic / pure: bubble ≈ dew (same value used)
+    // ============================================================
+
+    const PT_DATA = {
+      // R-454B (glide ~2°F) - Honeywell Solstice
+      R454B: {
+        name: "R-454B",
+        hasGlide: true,
+        points: [
+          [0, -59.0, -57.3], [20, -25.2, -23.3], [40, -4.6, -2.6], [60, 10.9, 13.0],
+          [70, 17.4, 19.6], [80, 23.4, 25.6], [90, 29.0, 31.1], [95, 31.6, 33.8],
+          [100, 34.1, 36.3], [105, 36.6, 38.8], [110, 38.9, 41.1], [115, 41.2, 43.4],
+          [120, 43.5, 45.7], [125, 45.6, 47.9], [130, 47.7, 50.0], [135, 49.8, 52.1],
+          [140, 51.8, 54.1], [145, 53.8, 56.0], [150, 55.7, 58.0], [155, 57.6, 59.8],
+          [160, 59.4, 61.7], [170, 63.0, 65.2], [180, 66.4, 68.6], [190, 69.6, 71.9],
+          [200, 72.8, 75.1], [210, 75.9, 78.1], [220, 78.8, 81.1], [240, 84.5, 86.7],
+          [260, 89.8, 92.0], [270, 92.3, 94.6], [280, 94.8, 97.0], [290, 97.2, 99.5],
+          [300, 99.6, 101.8], [310, 101.9, 104.1], [320, 104.2, 106.3], [330, 106.4, 108.5],
+          [340, 108.5, 110.7], [350, 110.6, 112.8], [360, 112.7, 114.8], [370, 114.7, 116.8],
+          [380, 116.7, 118.8], [390, 118.7, 120.7], [400, 120.6, 122.6], [410, 122.5, 124.5],
+          [420, 124.3, 126.3], [430, 126.1, 128.1], [440, 127.9, 129.9], [450, 129.7, 131.6],
+          [460, 131.4, 133.3], [470, 133.1, 135.0], [480, 134.7, 136.6], [490, 136.4, 138.2],
+          [500, 138.0, 139.8], [510, 139.6, 141.4], [520, 141.2, 142.9], [530, 142.7, 144.5]
+        ]
+      },
+
+      // R-410A (near-azeotropic, glide <0.3°F) - single sat temp
+      R410A: {
+        name: "R-410A",
+        hasGlide: false,
+        points: [
+          // Temp → Pressure inverted and cleaned from Hudson / BPA charts
+          // Format still [P, T, T] for consistency
+          [11.6, -40, -40], [14.9, -35, -35], [18.5, -30, -30], [22.5, -25, -25],
+          [26.9, -20, -20], [31.7, -15, -15], [36.8, -10, -10], [42.5, -5, -5],
+          [48.6, 0, 0], [55.2, 5, 5], [62.3, 10, 10], [70.0, 15, 15],
+          [78.3, 20, 20], [87.3, 25, 25], [96.8, 30, 30], [107.0, 35, 35],
+          [118.0, 40, 40], [130.0, 45, 45], [142.0, 50, 50], [155.0, 55, 55],
+          [170.0, 60, 60], [185.0, 65, 65], [201.0, 70, 70], [217.0, 75, 75],
+          [235.0, 80, 80], [254.0, 85, 85], [274.0, 90, 90], [295.0, 95, 95],
+          [317.0, 100, 100], [340.0, 105, 105], [365.0, 110, 110], [391.0, 115, 115],
+          [418.0, 120, 120], [446.0, 125, 125], [476.0, 130, 130], [507.0, 135, 135],
+          [539.0, 140, 140], [573.0, 145, 145], [608.0, 150, 150]
+        ]
+      },
+
+      // R-32 (pure)
+      R32: {
+        name: "R-32",
+        hasGlide: false,
+        points: [
+          [11.0, -40, -40], [14.4, -35, -35], [18.2, -30, -30], [22.3, -25, -25],
+          [26.8, -20, -20], [31.7, -15, -15], [37.1, -10, -10], [42.9, -5, -5],
+          [49.3, 0, 0], [56.1, 5, 5], [63.5, 10, 10], [71.5, 15, 15],
+          [80.0, 20, 20], [89.2, 25, 25], [99.1, 30, 30], [109.7, 35, 35],
+          [121.0, 40, 40], [133.0, 45, 45], [145.9, 50, 50], [159.5, 55, 55],
+          [174.1, 60, 60], [189.5, 65, 65], [205.8, 70, 70], [223.2, 75, 75],
+          [241.5, 80, 80], [260.9, 85, 85], [281.3, 90, 90], [302.9, 95, 95],
+          [325.7, 100, 100], [349.6, 105, 105], [374.9, 110, 110], [401.4, 115, 115],
+          [429.3, 120, 120], [458.6, 125, 125], [489.4, 130, 130], [521.8, 135, 135],
+          [555.7, 140, 140], [591.4, 145, 145], [628.8, 150, 150]
+        ]
+      },
+
+      // R-22 (pure) - Corrected from Hudson Tech PT chart
+      R22: {
+        name: "R-22",
+        hasGlide: false,
+        points: [
+          [0.5, -40, -40], [2.6, -35, -35], [4.9, -30, -30], [7.4, -25, -25],
+          [10.1, -20, -20], [13.2, -15, -15], [16.5, -10, -10], [20.1, -5, -5],
+          [24.0, 0, 0], [28.2, 5, 5], [32.8, 10, 10], [37.7, 15, 15],
+          [43.0, 20, 20], [48.8, 25, 25], [54.9, 30, 30], [61.5, 35, 35],
+          [68.5, 40, 40], [76.0, 45, 45], [84.0, 50, 50], [92.6, 55, 55],
+          [102.0, 60, 60], [111.0, 65, 65], [121.0, 70, 70], [132.0, 75, 75],
+          [144.0, 80, 80], [156.0, 85, 85], [168.0, 90, 90], [182.0, 95, 95],
+          [196.0, 100, 100], [211.0, 105, 105], [226.0, 110, 110], [243.0, 115, 115],
+          [260.0, 120, 120], [278.0, 125, 125], [297.0, 130, 130], [317.0, 135, 135],
+          [337.0, 140, 140], [359.0, 145, 145], [382.0, 150, 150]
+        ]
+      },
+
+      // R-407C (significant glide) - Honeywell Genetron
+      R407C: {
+        name: "R-407C",
+        hasGlide: true,
+        points: [
+          [0.0, -46.5, -33.9], [5.0, -35.2, -22.8], [10.0, -26.0, -13.8], [15.0, -18.1, -6.0],
+          [20.0, -11.2, 0.7], [25.0, -5.1, 6.8], [30.0, 0.6, 12.3], [35.0, 5.7, 17.3],
+          [40.0, 10.4, 21.9], [45.0, 14.9, 26.3], [50.0, 19.0, 30.3], [55.0, 22.9, 34.2],
+          [60.0, 26.7, 37.8], [65.0, 30.2, 41.3], [70.0, 33.6, 44.5], [75.0, 36.8, 47.7],
+          [80.0, 39.9, 50.7], [85.0, 42.8, 53.6], [90.0, 45.7, 56.4], [95.0, 48.4, 59.1],
+          [100.0, 51.1, 61.6], [105.0, 53.7, 64.2], [110.0, 56.2, 66.6], [115.0, 58.6, 68.9],
+          [120.0, 61.0, 71.2], [125.0, 63.3, 73.5], [130.0, 65.5, 75.6], [135.0, 67.7, 77.7],
+          [140.0, 69.8, 79.8], [145.0, 71.9, 81.8], [150.0, 73.9, 83.8], [155.0, 75.9, 85.7],
+          [160.0, 77.8, 87.6], [165.0, 79.7, 89.4], [170.0, 81.5, 91.2], [175.0, 83.4, 92.9],
+          [180.0, 85.2, 94.7], [185.0, 86.9, 96.4], [190.0, 88.6, 98.0], [195.0, 90.3, 99.6],
+          [200.0, 92.0, 101.2], [205.0, 93.6, 102.8], [210.0, 95.2, 104.4], [215.0, 96.8, 105.9],
+          [220.0, 98.3, 107.4], [225.0, 99.9, 108.8], [230.0, 101.4, 110.3], [235.0, 102.8, 111.7],
+          [240.0, 104.3, 113.1], [245.0, 105.7, 114.5], [250.0, 107.2, 115.8], [255.0, 108.6, 117.2],
+          [260.0, 109.9, 118.5], [265.0, 111.3, 119.8], [270.0, 112.6, 121.1], [275.0, 114.0, 122.4],
+          [280.0, 115.3, 123.6], [285.0, 116.6, 124.8], [290.0, 117.8, 126.1], [295.0, 119.1, 127.3],
+          [300.0, 120.4, 128.4], [305.0, 121.6, 129.6], [310.0, 122.8, 130.8], [315.0, 124.0, 131.9],
+          [320.0, 125.2, 133.1], [325.0, 126.4, 134.2], [330.0, 127.5, 135.3], [335.0, 128.7, 136.4],
+          [340.0, 129.8, 137.4]
+        ]
+      }
+    };
+
+    function interpolate(refKey, P) {
+      const data = PT_DATA[refKey];
+      if (!data || isNaN(P) || P < 0) return { bubble: null, dew: null };
+
+      const pts = data.points;
+      if (P <= pts[0][0]) return { bubble: pts[0][1], dew: pts[0][2] };
+      if (P >= pts[pts.length - 1][0]) return { bubble: pts[pts.length - 1][1], dew: pts[pts.length - 1][2] };
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [p1, b1, d1] = pts[i];
+        const [p2, b2, d2] = pts[i + 1];
+        if (P >= p1 && P <= p2) {
+          const t = (P - p1) / (p2 - p1);
+          return {
+            bubble: b1 + t * (b2 - b1),
+            dew: d1 + t * (d2 - d1)
+          };
+        }
+      }
+      return { bubble: null, dew: null };
+    }
+
+    function fmt(v, decimals = 1) {
+      if (v === null || isNaN(v)) return '—';
+      return v.toFixed(decimals) + ' °F';
+    }
+
+    function colorClass(val, type) {
+      if (val === null || isNaN(val)) return '';
+      if (type === 'SH') {
+        if (val < 5) return 'val-high';
+        if (val > 25) return 'val-warn';
+        return 'val-ok';
+      }
+      if (type === 'SC') {
+        if (val < 4) return 'val-high';
+        if (val > 20) return 'val-warn';
+        return 'val-ok';
+      }
+      return '';
+    }
+
+    function onRefrigerantChange() {
+      const key = document.getElementById('refrigerant').value;
+      const ref = PT_DATA[key];
+      document.getElementById('refBadge').textContent = ref.name;
+      document.getElementById('svgRefLabel').textContent = ref.name;
+
+      if (ref.hasGlide) {
+        document.getElementById('glideNote').textContent =
+          ref.name + ' has temperature glide → Superheat uses Dew point, Subcooling uses Bubble point.';
+        document.getElementById('shFormula').textContent = 'Suction Line − Sat. Evap (Dew)';
+        document.getElementById('scFormula').textContent = 'Sat. Cond (Bubble) − Liquid Line';
+        document.getElementById('satEvapLabel').textContent = 'Sat. Evaporating Temp (Dew)';
+        document.getElementById('satCondLabel').textContent = 'Sat. Condensing Temp (Bubble)';
+        document.getElementById('notesBox').innerHTML =
+          '<strong>Notes (' + ref.name + '):</strong><br>' +
+          '• Superheat uses <strong>dew-point</strong> (saturated vapor).<br>' +
+          '• Subcooling uses <strong>bubble-point</strong> (saturated liquid).<br>' +
+          '• Condenser Approach (air-cooled) = liquid line temp − entering condenser air.<br>' +
+          '• PT data from manufacturer charts.';
+      } else {
+        document.getElementById('glideNote').textContent =
+          ref.name + ' is pure / near-azeotropic → single saturation temperature used.';
+        document.getElementById('shFormula').textContent = 'Suction Line − Sat. Evap Temp';
+        document.getElementById('scFormula').textContent = 'Sat. Cond Temp − Liquid Line';
+        document.getElementById('satEvapLabel').textContent = 'Sat. Evaporating Temp';
+        document.getElementById('satCondLabel').textContent = 'Sat. Condensing Temp';
+        document.getElementById('notesBox').innerHTML =
+          '<strong>Notes (' + ref.name + '):</strong><br>' +
+          '• Pure or near-azeotropic refrigerant — single saturation temperature.<br>' +
+          '• Condenser Approach (air-cooled) = liquid line temp − entering condenser air.<br>' +
+          '• PT data from manufacturer charts.';
+      }
+      calculate();
+    }
+
+    function calculate() {
+      const key = document.getElementById('refrigerant').value;
+      const ref = PT_DATA[key];
+
+      const evapIn = parseFloat(document.getElementById('evapIn').value);
+      const evapOut = parseFloat(document.getElementById('evapOut').value);
+      const condIn = parseFloat(document.getElementById('condIn').value);
+      const condOut = parseFloat(document.getElementById('condOut').value);
+      const sucP = parseFloat(document.getElementById('sucP').value);
+      const sucT = parseFloat(document.getElementById('sucT').value);
+      const disP = parseFloat(document.getElementById('disP').value);
+      const liqT = parseFloat(document.getElementById('liqT').value);
+
+      // Delta Ts
+      const evapDT = (isNaN(evapIn) || isNaN(evapOut)) ? null : evapIn - evapOut;
+      const condDT = (isNaN(condOut) || isNaN(condIn)) ? null : condOut - condIn;
+
+      // Sat temps
+      const satS = interpolate(key, sucP);
+      const satD = interpolate(key, disP);
+
+      // For non-glide, bubble === dew, so either works
+      const satEvap = ref.hasGlide ? satS.dew : satS.dew;   // dew for SH
+      const satCond = ref.hasGlide ? satD.bubble : satD.bubble;
+
+      // Superheat & Subcool
+      const SH = (satEvap !== null && !isNaN(sucT)) ? sucT - satEvap : null;
+      const SC = (satCond !== null && !isNaN(liqT)) ? satCond - liqT : null;
+
+      // Approaches
+      const evapApp = (satEvap !== null && !isNaN(evapIn)) ? evapIn - satEvap : null;
+      const condApp = (!isNaN(liqT) && !isNaN(condIn)) ? liqT - condIn : null;
+
+      // Update UI
+      document.getElementById('evapDT').textContent = fmt(evapDT);
+      document.getElementById('condDT').textContent = fmt(condDT);
+      document.getElementById('evapApproach').textContent = fmt(evapApp);
+      document.getElementById('condApproach').textContent = fmt(condApp);
+
+      const shEl = document.getElementById('superheat');
+      shEl.textContent = fmt(SH);
+      shEl.className = 'value ' + colorClass(SH, 'SH');
+
+      const scEl = document.getElementById('subcool');
+      scEl.textContent = fmt(SC);
+      scEl.className = 'value ' + colorClass(SC, 'SC');
+
+      document.getElementById('satEvap').textContent = fmt(satEvap);
+      document.getElementById('satCond').textContent = fmt(satCond);
+    }
+
+    function loadExample() {
+      // Values inspired by the original diagram (works well with R-454B)
+      document.getElementById('evapIn').value = 75;
+      document.getElementById('evapOut').value = 55;
+      document.getElementById('condIn').value = 95;
+      document.getElementById('condOut').value = 115;
+      document.getElementById('sucP').value = 93;
+      document.getElementById('sucT').value = 50;
+      document.getElementById('disP').value = 320;
+      document.getElementById('liqT').value = 100;
+      calculate();
+    }
+
+    function resetDefaults() {
+      document.getElementById('evapIn').value = '';
+      document.getElementById('evapOut').value = '';
+      document.getElementById('condIn').value = '';
+      document.getElementById('condOut').value = '';
+      document.getElementById('sucP').value = '';
+      document.getElementById('sucT').value = '';
+      document.getElementById('disP').value = '';
+      document.getElementById('liqT').value = '';
+      calculate();
+    }
+
+    // Init
+    onRefrigerantChange();
+  </script>
+</body>
+</html>
